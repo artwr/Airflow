@@ -27,6 +27,7 @@ hdfs = ['snakebite>=2.4.13']
 slack = ['slackclient>=0.15']
 crypto = ['cryptography>=0.9.3']
 
+travis_env = postgres + mysql + hive + jdbc + s3 + crypto
 all_dbs = postgres + mysql + hive + mssql + hdfs
 devel = all_dbs + doc + samba + s3 + ['nose'] + slack + crypto
 
@@ -78,6 +79,7 @@ setup(
         'samba': samba,
         'slack': slack,
         'crypto': crypto,
+        'travis': travis_env,
     },
     author='Maxime Beauchemin',
     author_email='maximebeauchemin@gmail.com',
