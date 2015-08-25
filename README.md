@@ -1,4 +1,4 @@
-# Airflow
+# Airflow [![Build Status](https://travis-ci.org/artwr/airflow.svg?branch=travis-ci-setup-test)](https://travis-ci.org/artwr/airflow)
 
 Airflow is a platform to programmatically author, schedule and monitor 
 data pipelines.
