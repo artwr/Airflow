@@ -23,15 +23,15 @@ env:
     - TOX_ENV=py33
     - TOX_ENV=py34
 
-sudo: false
+# sudo: false
 
 cache:
   directories:
     - $HOME/.pip-cache
 
 before_install:
-  - apt-get update -qq
-  - apt-get install -qq libmysqlclient-dev libpq-dev libffi-dev libssl-dev libsasl2-dev libkrb5-dev
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq libmysqlclient-dev libpq-dev libffi-dev libssl-dev libsasl2-dev libkrb5-dev
 
 install:
   - if [[ $TRAVIS_PYTHON_VERSION == 2.6 ]]; then pip install importlib unittest2; fi
