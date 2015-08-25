@@ -1,0 +1,58 @@
+language: python
+
+addons:
+  postgresql: "9.3"
+
+services:
+  - mysql
+  - postgresql
+  - sqlite3
+
+env:
+  global:
+    - PIP_DOWNLOAD_CACHE=$HOME/.pip-cache
+    - POSTGRES_USER=postgres
+    - AIRFLOW_HOME=$HOME/airflow
+    - AIRFLOW_CONFIG=$AIRFLOW_HOME/unittests.cfg
+    - AIRFLOW_DB=$AIRFLOW_HOME/unittests.db
+
+  matrix:
+    - TOX_ENV=flake8
+    - TOX_ENV=docs
+    - TOX_ENV=py27
+    - TOX_ENV=py33
+    - TOX_ENV=py34
+
+sudo: false
+
+cache:
+  - $HOME/.pip-cache
+
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq libmysqlclient-dev libpq-dev libffi-dev libssl-dev libsasl2-dev libkrb5-dev
+
+install:
+  - if [[ $TRAVIS_PYTHON_VERSION == 2.6 ]]; then pip install importlib unittest2; fi
+  - pip install tox
+  - pip install -r requirements.txt
+  - pip install -q -e .[devel]
+
+
+before_script:
+  # Making sure airflow is installed
+  - which airflow > /dev/null || python setup.py develop
+  # initialize the db
+  - ls -s $AIRFLOW_DB > /dev/null 2>&1 || airflow initdb
+  - ls -s $AIRFLOW_DB | egrep '^0 ' > /dev/null && airflow initdb
+  # - psql -c 'create database airflow_db;' -U postgres
+  # - mysql -e 'create database IF NOT EXISTS airflow_db;' -uroot || true
+
+script:
+  - tox -e $TOX_ENV
+
+branches:
+  only:
+    - master
+    - /^(?i:travis)-.*$/
+    - /^(?i:ci)-.*$/
