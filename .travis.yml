@@ -43,7 +43,7 @@ before_script:
   - echo $AIRFLOW_CONFIG
   # - which airflow > /dev/null || python setup.py develop
   # initialize the db
-  - airflow initdb
+  - if [[ $TOX_ENV == "py"* ]]; airflow initdb; fi
   # - ls -s $AIRFLOW_DB > /dev/null 2>&1 || airflow initdb
   # - ls -s $AIRFLOW_DB | egrep '^0 ' > /dev/null && airflow initdb
   # - psql -c 'create database airflow_db;' -U postgres
