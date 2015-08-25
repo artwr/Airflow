@@ -38,7 +38,7 @@ install:
 
 before_script:
   # Making sure airflow is installed
-  - which airflow > /dev/null || python setup.py develop
+  # - which airflow > /dev/null || python setup.py develop
   # initialize the db
   - ls -s $AIRFLOW_DB > /dev/null 2>&1 || airflow initdb
   - ls -s $AIRFLOW_DB | egrep '^0 ' > /dev/null && airflow initdb
