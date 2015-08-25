@@ -53,3 +53,7 @@ branches:
     - master
     - /^(?i:travis)-.*$/
     - /^(?i:ci)-.*$/
+
+notifications:
+  email:
+    - arthur.wiedmer+airflowtravis@gmail.com
