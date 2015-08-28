@@ -142,14 +142,12 @@ class S3Hook(BaseHook):
                                            profile_name=self.profile)
             assumed_role_object = sts_connection.assume_role(
                 role_arn=self.role_arn,
-                role_session_name="Airflow_" + self.s3_conn_id
-                )
+                role_session_name="Airflow_" + self.s3_conn_id)
             creds = assumed_role_object.credentials
             connection = S3Connection(
                 aws_access_key_id=creds.access_key,
                 aws_secret_access_key=creds.secret_key,
-                security_token=creds.session_token
-                )
+                security_token=creds.session_token)
         else:
             connection = S3Connection(aws_access_key_id=a_key,
                                       aws_secret_access_key=s_key)

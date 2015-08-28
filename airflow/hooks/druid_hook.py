@@ -125,7 +125,7 @@ class DruidHook(BaseHook):
         return d["task"]
 
     def load_from_hdfs(
-            self, datasource, static_path,  ts_dim, columns,
+            self, datasource, static_path, ts_dim, columns,
             intervals, metric_spec=None):
         """
         load data to druid from hdfs

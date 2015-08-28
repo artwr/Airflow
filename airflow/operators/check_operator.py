@@ -134,7 +134,7 @@ class ValueCheckOperator(BaseOperator):
                 num_rec = [float(r) for r in records]
             except (ValueError, TypeError) as e:
                 cvestr = "Converting a result to float failed.\n"
-                raise AirflowException(cvestr+except_temp.format(**locals()))
+                raise AirflowException(cvestr + except_temp.format(**locals()))
             if self.has_tolerance:
                 tests = [
                     r / (1 + self.tol) <= self.pass_value <= r / (1 - self.tol)
@@ -188,7 +188,8 @@ class IntervalCheckOperator(BaseOperator):
         sqlt = ("SELECT {sqlexp} FROM {table}"
                 " WHERE {date_filter_column}=").format(**locals())
         self.sql1 = sqlt + "'{{ ds }}'"
-        self.sql2 = sqlt + "'{{ macros.ds_add(ds, "+str(self.days_back)+") }}'"
+        self.sql2 = (sqlt +
+                     "'{{ macros.ds_add(ds, " + str(self.days_back) + ") }}'")
 
     def execute(self, context=None):
         hook = self.get_db_hook()

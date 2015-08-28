@@ -35,7 +35,8 @@ class SlackAPIPostOperator(SlackAPIOperator):
     """
     Posts messages to a slack channel
 
-    :param channel: channel in which to post message on slack name (#general) or ID (C12318391)
+    :param channel: channel in which to post message on slack name (#general)
+        or ID (C12318391)
     :type channel: string
     :param username: Username that airflow will be posting to Slack as
     :type username: string
@@ -54,7 +55,7 @@ class SlackAPIPostOperator(SlackAPIOperator):
                        'Here is a cat video instead\n'
                        'https://www.youtube.com/watch?v=J---aiyznGQ'),
                  icon_url=('https://raw.githubusercontent.com/airbnb/airflow/'
-                          'master/airflow/www/static/pin_100.png'),
+                           'master/airflow/www/static/pin_100.png'),
                  *args, **kwargs):
         self.method = 'chat.postMessage'
         self.channel = channel

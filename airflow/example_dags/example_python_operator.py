@@ -40,7 +40,7 @@ for i in range(10):
     respectively
     '''
     task = PythonOperator(
-        task_id='sleep_for_'+str(i),
+        task_id='sleep_for_' + str(i),
         python_callable=my_sleeping_function,
         op_kwargs={'random_base': i},
         dag=dag)
