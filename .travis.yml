@@ -1,23 +1,22 @@
 language: python
 
-addons:
-  postgresql: "9.3"
+# addons:
+#   postgresql: "9.3"
 
 services:
   - mysql
-  - postgresql
+  #- postgresql
   - sqlite3
 
 env:
   global:
-    - PIP_DOWNLOAD_CACHE=$HOME/.pip-cache
-    - POSTGRES_USER=postgres
+    #- PIP_DOWNLOAD_CACHE=$HOME/.pip-cache
+    #- POSTGRES_USER=postgres
     - AIRFLOW_HOME=$HOME/airflow
     - AIRFLOW_CONFIG=$AIRFLOW_HOME/unittests.cfg
     - AIRFLOW_DB=$AIRFLOW_HOME/unittests.db
 
   matrix:
-    - TOX_ENV=flake8
     - TOX_ENV=docs
     - TOX_ENV=py27
     - TOX_ENV=py33
@@ -30,7 +29,8 @@ before_install:
   - sudo apt-get install -qq libmysqlclient-dev libpq-dev libffi-dev libssl-dev libsasl2-dev libkrb5-dev
 
 install:
-  - if [[ $TRAVIS_PYTHON_VERSION == 2.6 ]]; then pip install importlib unittest2; fi
+  - pip install --upgrade pip
+  # - if [[ $TRAVIS_PYTHON_VERSION == 2.6 ]]; then pip install importlib unittest2; fi
   - pip install tox
   - pip install flake8
   - pip install -r requirements.txt
@@ -42,9 +42,10 @@ before_script:
   - echo $AIRFLOW_DB
   - echo $AIRFLOW_HOME
   - echo $AIRFLOW_CONFIG
+  - flake8 airflow
   # - which airflow > /dev/null || python setup.py develop
   # initialize the db
-  - if [ $TOX_ENV == "py"* ]; then airflow initdb; fi
+  - if [[ $TOX_ENV =~ ^py.* ]]; then airflow initdb; fi
   # - ls -s $AIRFLOW_DB > /dev/null 2>&1 || airflow initdb
   # - ls -s $AIRFLOW_DB | egrep '^0 ' > /dev/null && airflow initdb
   # - psql -c 'create database airflow_db;' -U postgres
