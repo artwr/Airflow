@@ -17,7 +17,7 @@ env:
     - AIRFLOW_DB=$AIRFLOW_HOME/unittests.db
 
   matrix:
-    - TOX_ENV=docs
+    - TOX_ENV=flake8
     - TOX_ENV=py27
     - TOX_ENV=py33
     - TOX_ENV=py34

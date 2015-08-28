@@ -30,10 +30,6 @@ requests
 setproctitle
 statsd
 #snakebite -> not compatible with Python 3
-sphinx
-sphinx-argparse
-sphinx_rtd_theme
-Sphinx-PyPI-upload
 sqlalchemy
 thrift
 jaydebeapi
