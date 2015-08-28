@@ -30,8 +30,6 @@ before_install:
 
 install:
   - pip install --upgrade pip
-  - pip install nose
-  # - if [[ $TRAVIS_PYTHON_VERSION == 2.6 ]]; then pip install importlib unittest2; fi
   - pip install tox
   - pip install flake8
   - pip install -r requirements.txt
@@ -43,6 +41,7 @@ before_script:
   - echo $AIRFLOW_DB
   - echo $AIRFLOW_HOME
   - echo $AIRFLOW_CONFIG
+  - echo $(which make)
   - flake8 --ignore=F401,F403,E123,E129,E226,E712,F811 --max-line-length=110 --exclude=*init*.py airflow
   # - which airflow > /dev/null || python setup.py develop
   # initialize the db
