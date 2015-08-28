@@ -40,10 +40,6 @@ before_script:
   - echo $AIRFLOW_HOME
   - echo $AIRFLOW_CONFIG
   - flake8 --ignore=F401,F403,E123,E129,E226,E712,F811 --max-line-length=110 --exclude=*init*.py airflow
-  # - which airflow > /dev/null || python setup.py develop
-  - if [[ $TOX_ENV =~ ^py.* ]]; then airflow initdb; fi
-  # - ls -s $AIRFLOW_DB > /dev/null 2>&1 || airflow initdb
-  # - ls -s $AIRFLOW_DB | egrep '^0 ' > /dev/null && airflow initdb
 
 script:
   - tox -e $TOX_ENV
