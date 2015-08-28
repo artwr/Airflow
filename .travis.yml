@@ -30,6 +30,7 @@ before_install:
 
 install:
   - pip install --upgrade pip
+  - pip install nose
   # - if [[ $TRAVIS_PYTHON_VERSION == 2.6 ]]; then pip install importlib unittest2; fi
   - pip install tox
   - pip install flake8
