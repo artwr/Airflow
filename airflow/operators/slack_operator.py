@@ -6,7 +6,8 @@ class SlackAPIOperator(BaseOperator):
     """
     Base Slack Operator
     The SlackAPIPostOperator is derived from this operator.
-    In the future additional Slack API Operators will be derived from this class as well
+    In the future additional Slack API Operators will be derived
+    from this class as well.
 
     :param token: Slack api token
     :type token: String
@@ -49,10 +50,11 @@ class SlackAPIPostOperator(SlackAPIOperator):
     def __init__(self,
                  channel='#general',
                  username='Airflow',
-                 text='No message has been set.\n'
-                      'Here is a cat video instead\n'
-                      'https://www.youtube.com/watch?v=J---aiyznGQ',
-                 icon_url='https://raw.githubusercontent.com/airbnb/airflow/master/airflow/www/static/pin_100.png',
+                 text=('No message has been set.\n'
+                       'Here is a cat video instead\n'
+                       'https://www.youtube.com/watch?v=J---aiyznGQ'),
+                 icon_url=('https://raw.githubusercontent.com/airbnb/airflow/'
+                          'master/airflow/www/static/pin_100.png'),
                  *args, **kwargs):
         self.method = 'chat.postMessage'
         self.channel = channel
@@ -68,4 +70,3 @@ class SlackAPIPostOperator(SlackAPIOperator):
         super(SlackAPIPostOperator, self).__init__(method=self.method,
                                                    params=self.params,
                                                    *args, **kwargs)
-

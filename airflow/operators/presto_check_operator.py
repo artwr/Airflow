@@ -1,5 +1,7 @@
 from airflow.hooks import PrestoHook
-from airflow.operators import CheckOperator, ValueCheckOperator, IntervalCheckOperator
+from airflow.operators import (CheckOperator,
+                               ValueCheckOperator,
+                               IntervalCheckOperator,)
 from airflow.utils import apply_defaults
 
 
@@ -65,7 +67,10 @@ class PrestoValueCheckOperator(ValueCheckOperator):
             self, sql, pass_value, tolerance=None,
             presto_conn_id='presto_default',
             *args, **kwargs):
-        super(PrestoValueCheckOperator, self).__init__(sql, pass_value, tolerance, *args, **kwargs)
+        super(PrestoValueCheckOperator, self).__init__(sql,
+                                                       pass_value,
+                                                       tolerance,
+                                                       *args, **kwargs)
         self.presto_conn_id = presto_conn_id
 
     def get_db_hook(self):
@@ -94,7 +99,11 @@ class PrestoIntervalCheckOperator(IntervalCheckOperator):
             date_filter_column='ds', days_back=-7,
             presto_conn_id='presto_default',
             *args, **kwargs):
-        super(PrestoIntervalCheckOperator, self).__init__(table, metrics_thresholds, date_filter_column, days_back, *args, **kwargs)
+        super(PrestoIntervalCheckOperator, self).__init__(table,
+                                                          metrics_thresholds,
+                                                          date_filter_column,
+                                                          days_back,
+                                                          *args, **kwargs)
         self.presto_conn_id = presto_conn_id
 
     def get_db_hook(self):

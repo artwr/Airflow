@@ -117,7 +117,7 @@ class MetastoreBrowserView(BaseView, wwwutils.DataProfilingMixin):
         """.format(where_clause=where_clause, LIMIT=TABLE_SELECTOR_LIMIT)
         h = MySqlHook(METASTORE_MYSQL_CONN_ID)
         d = [
-                {'id': row[0], 'text': row[0]}
+            {'id': row[0], 'text': row[0]}
             for row in h.get_records(sql)]
         return json.dumps(d)
 

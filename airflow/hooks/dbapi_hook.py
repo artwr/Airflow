@@ -42,7 +42,6 @@ class DbApiHook(BaseHook):
             username=db.login,
             schema=db.schema)
 
-
     def get_pandas_df(self, sql, parameters=None):
         '''
         Executes the sql and returns a pandas dataframe
@@ -92,7 +91,7 @@ class DbApiHook(BaseHook):
             sql = [sql]
 
         if self.supports_autocommit:
-           self.set_autocommit(conn, autocommit)
+            self.set_autocommit(conn, autocommit)
 
         cur = conn.cursor()
         for s in sql:
@@ -153,9 +152,3 @@ class DbApiHook(BaseHook):
         conn.close()
         logging.info(
             "Done loading. Loaded a total of {i} rows".format(**locals()))
-
-    def get_conn(self):
-        """
-        Retuns a sql connection that can be used to retrieve a cursor.
-        """
-        raise NotImplemented()

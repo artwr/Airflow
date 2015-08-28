@@ -3,7 +3,6 @@ from __future__ import print_function
 from builtins import input
 import argparse
 import dateutil.parser
-from datetime import datetime
 import logging
 import os
 import subprocess

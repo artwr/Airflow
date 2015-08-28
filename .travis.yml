@@ -42,7 +42,7 @@ before_script:
   - echo $AIRFLOW_DB
   - echo $AIRFLOW_HOME
   - echo $AIRFLOW_CONFIG
-  - flake8 airflow
+  - flake8 --ignore=F401,E129,E712,F811 --max-line-length=110 --exclude=*init*.py airflow
   # - which airflow > /dev/null || python setup.py develop
   # initialize the db
   - if [[ $TOX_ENV =~ ^py.* ]]; then airflow initdb; fi

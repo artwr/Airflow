@@ -26,7 +26,8 @@ from flask import request
 import sqlalchemy as sqla
 from wtforms import (
     widgets,
-    Form, DateTimeField, SelectField, TextAreaField, PasswordField, StringField)
+    Form,
+    DateTimeField, SelectField, TextAreaField, PasswordField, StringField)
 
 from pygments import highlight, lexers
 from pygments.formatters import HtmlFormatter
@@ -349,7 +350,9 @@ class Airflow(BaseView):
         pd.set_option('display.max_colwidth', 100)
         hook = db.get_hook()
         try:
-            df = hook.get_pandas_df(wwwutils.limit_sql(sql, CHART_LIMIT, conn_type=db.conn_type))
+            df = hook.get_pandas_df(wwwutils.limit_sql(sql,
+                                                       CHART_LIMIT,
+                                                       conn_type=db.conn_type))
             df = df.fillna(0)
         except Exception as e:
             payload['error'] += "SQL execution failed. Details: " + str(e)
@@ -1019,7 +1022,8 @@ class Airflow(BaseView):
 
         if start_date:
             difference = base_date - start_date
-            offset = timedelta(seconds=int(difference.total_seconds() % dag.schedule_interval.total_seconds()))
+            offset = timedelta(seconds=int(difference.total_seconds()
+                                           % dag.schedule_interval.total_seconds()))
             base_date -= offset
             base_date -= timedelta(microseconds=base_date.microsecond)
 
@@ -1251,7 +1255,7 @@ class Airflow(BaseView):
                         ti.execution_date.isoformat(), old_div((
                             ti.end_date - (
                                 ti.execution_date + task.schedule_interval)
-                        ).total_seconds(),(60*60))
+                        ).total_seconds(), (60*60))
                     ])
             all_data.append({'data': data, 'name': task.task_id})
 
@@ -1445,7 +1449,9 @@ class QueryView(wwwutils.DataProfilingMixin, BaseView):
             db = [db for db in dbs if db.conn_id == conn_id_str][0]
             hook = db.get_hook()
             try:
-                df = hook.get_pandas_df(wwwutils.limit_sql(sql, QUERY_LIMIT, conn_type=db.conn_type))
+                df = hook.get_pandas_df(wwwutils.limit_sql(sql,
+                                                           QUERY_LIMIT,
+                                                           conn_type=db.conn_type))
                 # df = hook.get_pandas_df(sql)
                 has_data = len(df) > 0
                 df = df.fillna('')
@@ -1560,8 +1566,6 @@ def nobr_f(v, c, m, p):
     return Markup("<nobr>{}</nobr>".format(getattr(m, p)))
 
 
-
-
 class JobModelView(ModelViewOnly):
     verbose_name_plural = "jobs"
     verbose_name = "job"
@@ -1624,6 +1628,7 @@ admin.add_view(mv)
 # Hack to not add this view to the menu
 admin._menu = admin._menu[:-1]
 
+
 class ConnectionModelView(wwwutils.SuperUserMixin, AirflowModelView):
     create_template = 'airflow/conn_create.html'
     edit_template = 'airflow/conn_edit.html'
@@ -1652,7 +1657,7 @@ class ConnectionModelView(wwwutils.SuperUserMixin, AirflowModelView):
     # extra__{conn_type}__name. You can also hide form elements and rename
     # others from the connection_form.js file
     form_extra_fields = {
-        'extra__jdbc__drv_path' : StringField('Driver Path'),
+        'extra__jdbc__drv_path': StringField('Driver Path'),
         'extra__jdbc__drv_clsname': StringField('Driver Class'),
     }
     form_choices = {
@@ -1679,7 +1684,7 @@ class ConnectionModelView(wwwutils.SuperUserMixin, AirflowModelView):
         formdata = form.data
         if formdata['conn_type'] in ['jdbc']:
             extra = {
-                key:formdata[key]
+                key: formdata[key]
                 for key in self.form_extra_fields.keys() if key in formdata}
             model.extra = json.dumps(extra)
 
@@ -1701,7 +1706,7 @@ class ConnectionModelView(wwwutils.SuperUserMixin, AirflowModelView):
     def on_form_prefill(self, form, id):
         try:
             d = json.loads(form.data.get('extra', '{}'))
-        except Exception as e:
+        except Exception:
             d = {}
 
         for field in list(self.form_extra_fields.keys()):
@@ -1714,6 +1719,7 @@ mv = ConnectionModelView(
     models.Connection, Session,
     name="Connections", category="Admin")
 admin.add_view(mv)
+
 
 class UserModelView(wwwutils.SuperUserMixin, AirflowModelView):
     verbose_name = "User"

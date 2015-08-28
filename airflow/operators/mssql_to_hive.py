@@ -90,7 +90,8 @@ class MsSqlToHiveTransfer(BaseOperator):
         cursor = conn.cursor()
         cursor.execute(self.sql)
         with NamedTemporaryFile("w") as f:
-            csv_writer = csv.writer(f, delimiter=self.delimiter, encoding='utf-8')
+            csv_writer = csv.writer(f, delimiter=self.delimiter,
+                                    encoding='utf-8')
             field_dict = OrderedDict()
             col_count = 0
             for field in cursor.description:

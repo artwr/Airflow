@@ -61,6 +61,7 @@ def limit_sql(sql, limit, conn_type):
             """.format(**locals())
     return sql
 
+
 def gzipped(f):
     '''
     Decorator to make a view compressed

@@ -1,3 +1,4 @@
+# flake8: noqa
 """
 Authentication is implemented using flask_login and different environments can
 implement their own login mechanisms by providing an `airflow_login` module
@@ -11,7 +12,6 @@ import logging
 import os
 import sys
 from airflow.configuration import conf
-from airflow.models import DAG
 from flask.ext.admin import BaseView
 
 
@@ -32,6 +32,7 @@ if conf.getboolean('webserver', 'AUTHENTICATE'):
 
 class AirflowViewPlugin(BaseView):
     pass
+
 
 class AirflowMacroPlugin(object):
     def __init__(self, namespace):

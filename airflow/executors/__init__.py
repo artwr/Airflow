@@ -1,7 +1,7 @@
 import logging
 
 from airflow.configuration import conf
-from airflow.executors.base_executor import BaseExecutor
+# from airflow.executors.base_executor import BaseExecutor
 from airflow.executors.local_executor import LocalExecutor
 from airflow.executors.celery_executor import CeleryExecutor
 from airflow.executors.sequential_executor import SequentialExecutor

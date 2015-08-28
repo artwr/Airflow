@@ -8,8 +8,10 @@ merge = chain.from_iterable
 
 from airflow.configuration import conf
 
+
 class AirflowPluginException(Exception):
     pass
+
 
 class AirflowPlugin(object):
     name = None

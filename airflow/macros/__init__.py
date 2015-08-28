@@ -1,9 +1,7 @@
+# flake8: noqa
 from __future__ import absolute_import
-from random import random
 from datetime import datetime, timedelta
-import time
 from . import hive
-import uuid
 
 
 def ds_add(ds, days):

@@ -298,7 +298,8 @@ class S3PrefixSensor(BaseSensorOperator):
 
     :param bucket_name: Name of the S3 bucket
     :type bucket_name: str
-    :param prefix: The prefix being waited on. Relative path from bucket root level.
+    :param prefix: The prefix being waited on. Relative path from bucket
+        root level.
     :type prefix: str
     :param delimiter: The delimiter intended to show hierarchy.
         Defaults to '/'.

@@ -1,18 +1,21 @@
 from builtins import str
 __author__ = 'janomar'
 
-import logging
+
 import jaydebeapi
 
 from airflow.hooks.dbapi_hook import DbApiHook
+
 
 class JdbcHook(DbApiHook):
     """
     General hook for jdbc db access.
 
-    If a connection id is specified, host, port, schema, username and password will be taken from the predefined connection.
+    If a connection id is specified, host, port, schema, username and
+    password will be taken from the predefined connection.
     Raises an airflow error if the given connection id doesn't exist.
-    Otherwise host, port, schema, username and password can be specified on the fly.
+    Otherwise host, port, schema, username and password can be
+    specified on the fly.
 
 
 
@@ -29,7 +32,6 @@ class JdbcHook(DbApiHook):
         a '.sql' extensions.
     """
 
-
     conn_name_attr = 'jdbc_conn_id'
     default_conn_name = 'jdbc_default'
     supports_autocommit = True
@@ -43,7 +45,7 @@ class JdbcHook(DbApiHook):
         jdbc_driver_name = conn.extra_dejson.get('extra__jdbc__drv_clsname')
 
         conn = jaydebeapi.connect(jdbc_driver_name,
-                           [str(host), str(login), str(psw)],
+                                  [str(host), str(login), str(psw)],
                                   jdbc_driver_loc,)
         return conn
 

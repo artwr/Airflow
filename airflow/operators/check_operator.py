@@ -3,7 +3,6 @@ from builtins import str
 import logging
 
 from airflow.utils import AirflowException
-from airflow.hooks import PrestoHook
 from airflow.models import BaseOperator
 from airflow.utils import apply_defaults
 
@@ -198,9 +197,11 @@ class IntervalCheckOperator(BaseOperator):
         logging.info('Executing SQL check: ' + self.sql1)
         row1 = hook.get_first(hql=self.sql1)
         if not row2:
-            raise AirflowException("The query {q} returned None").format(q=self.sql2)
+            raise AirflowException("The query {q} returned None"
+                                   "".format(q=self.sql2))
         if not row1:
-            raise AirflowException("The query {q} returned None").format(q=self.sql1)
+            raise AirflowException("The query {q} returned None"
+                                   "".format(q=self.sql1))
         current = dict(zip(self.metrics_sorted, row1))
         reference = dict(zip(self.metrics_sorted, row2))
         ratios = {}

@@ -29,7 +29,7 @@ class HiveToDruidTransfer(BaseOperator):
 
     template_fields = ('sql', 'intervals')
     template_ext = ('.sql',)
-    #ui_color = '#a0e08c'
+    # ui_color = '#a0e08c'
 
     @apply_defaults
     def __init__(
@@ -55,8 +55,6 @@ class HiveToDruidTransfer(BaseOperator):
         self.druid_ingest_conn_id = druid_ingest_conn_id
         self.metastore_conn_id = metastore_conn_id
 
-
-
     def execute(self, context):
         hive = HiveCliHook(hive_cli_conn_id=self.hive_cli_conn_id)
         logging.info("Extracting data from Hive")
@@ -74,12 +72,11 @@ class HiveToDruidTransfer(BaseOperator):
         {sql}
         """.format(**locals())
         hive.run_cli(hql)
-        #hqls = hql.split(';')
-        #logging.info(str(hqls))
-        #from airflow.hooks import HiveServer2Hook
-        #hive = HiveServer2Hook(hiveserver2_conn_id="hiveserver2_silver")
-        #hive.get_results(hqls)
-
+        # hqls = hql.split(';')
+        # logging.info(str(hqls))
+        # from airflow.hooks import HiveServer2Hook
+        # hive = HiveServer2Hook(hiveserver2_conn_id="hiveserver2_silver")
+        # hive.get_results(hqls)
 
         m = HiveMetastoreHook(self.metastore_conn_id)
         t = m.get_table(hive_table)
@@ -107,4 +104,4 @@ class HiveToDruidTransfer(BaseOperator):
             "Cleaning up by dropping the temp "
             "Hive table {}".format(hive_table))
         hql = "DROP TABLE IF EXISTS {}".format(hive_table)
-        #hive.run_cli(hql)
+        # hive.run_cli(hql)
