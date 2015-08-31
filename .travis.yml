@@ -39,7 +39,7 @@ before_script:
   - echo $AIRFLOW_DB
   - echo $AIRFLOW_HOME
   - echo $AIRFLOW_CONFIG
-  - flake8 --ignore=F401,F403,E123,E129,E226,E712,F811 --max-line-length=110 --exclude=*init*.py airflow
+  #- flake8 --ignore=F401,F403,E123,E129,E226,E712,F811 --max-line-length=110 --exclude=*init*.py airflow
 
 script:
   - tox -e $TOX_ENV
