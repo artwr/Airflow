@@ -4,7 +4,7 @@ Setting up the sandbox from the :doc:`start` section was easy, now
 working towards a production grade environment is a bit more work.
 
 As of August 2015, Airflow has experimental support for Python 3. Any issues should be reported (or fixed!).
-The only major regression is that ``HDFSHooks`` do not work (due to a ``snakebite`` dependency)
+The only major regression is that ``HDFSHook`` does not work (due to a ``snakebite`` dependency)
 
 
 Extra Packages
@@ -36,6 +36,8 @@ Here's the list of the subpackages and what they enable:
 |  jdbc       |  ``pip install airflow[jdbc]``     | JDBC hooks and operators                       |
 +-------------+------------------------------------+------------------------------------------------+
 |  hdfs       |  ``pip install airflow[hdfs]``     | HDFS hooks and operators                       |
++-------------+------------------------------------+------------------------------------------------+
+|  webhdfs    |  ``pip install airflow[webhdfs]``  | WebHDFS hooks and operators                    |
 +-------------+------------------------------------+------------------------------------------------+
 |  s3         | ``pip install airflow[s3]``        | ``S3KeySensor``, ``S3PrefixSensor``            |
 +-------------+------------------------------------+------------------------------------------------+
