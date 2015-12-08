@@ -21,7 +21,7 @@ If you are reporting a bug, please include:
 ### Fix Bugs
 
 Look through the GitHub issues for bugs. Anything tagged with "bug" is
-open to whoever wants to implement it.
+open to whoever wants to implement it. Ideally you would come up with a test case which is currently failing because of the bug and that will pass after fixing the bug. It will help prevent regressions.
 
 ### Implement Features
 
@@ -51,18 +51,49 @@ If you are proposing a feature:
 -   Remember that this is a volunteer-driven project, and that
     contributions are welcome :)
 
-## Latests Documentation
+## Latest Documentation
 
 [API Documentation](http://pythonhosted.com/airflow)
 
-## Testing
+You can also generate the documentation yourself with:
 
-Assuming you are working in a virtualenv. Install development requirements:
+    cd docs && ./build.sh
 
-    cd $AIRFLOW_HOME
+## Testing and Continuous Integration
+
+Continuous integration is setup through [Travis CI](https://travis-ci.org/airbnb/airflow) on the Airflow repository. It will run the current set of tests on pull requests, to try to ensure that we do not introduce regressions while adding new features.
+
+Some tests are currently disabled in Travis until we find a way to run them in the build environment provided. Any help in that regard would be greatly appreciated. In the mean time, you can take a look at the [Running unit tests](#running-unit-tests) section below to setup your environment for running groups of tests or individual tests.
+
+## Pull Request Guidelines
+
+Before you submit a pull request from your forked repo, check that it
+meets these guidelines:
+
+1. The pull request should include tests, either as doctests, unit tests, or both.
+1. If the pull request adds functionality, the docs should be updated as part of the same PR. Doc string are often sufficient, make sure to follow the sphinx compatible standards.
+1. The pull request should work for Python 2.7 and 3.4. Support for 3.5 is experimental for now. Support for Python 2.6 support has been dropped, please consider upgrading to 2.7 if you want to use Airflow. If you need help writing code that works in both Python 2 and 3, see the documentation at the [Python-Future project](http://python-future.org) (the future package is an Airflow requirement and should be used where possible).
+1.  Code will be reviewed by re running the unittests, flake8 and syntax should be as rigorous as the core Python project.
+1.  Please rebase and resolve all conflicts before submitting.
+
+## Running unit tests
+
+Here are loose guidelines on how to get your environment to run the unit tests.
+We do understand that no one out there can run the full test suite since Airflow is meant to connect to virtually any external system and that you 
+most likely have only a subset of these in your environment. You should run the CoreTests and tests related to things you touched in your PR.
+
+The best way to ensure consistent testing is to install airflow with the correct extras in a [virtual environment](https://virtualenv.readthedocs.org/en/latest/). You could create one in your airflow directory:
+
+    cd /path/to/airflow/repository
     virtualenv env
     source env/bin/activate
+
+Then install the airflow development requirements:
+
     pip install -r requirements.txt
+
+Finally you can install airflow
+    pip install git+file://.#egg=airflow[async,celery,crypto,hive,mysql,s3,webhdfs]
     python setup.py develop
 
 Tests can then be run with (see also the [Running unit tests](#running-unit-tests) section below):
@@ -73,31 +104,8 @@ Lint the project with:
 
     flake8 changes tests
 
-## API documentation
-
-Generate the documentation with:
-
-    cd docs && ./build.sh
 
 
-## Pull Request Guidelines
-
-Before you submit a pull request from your forked repo, check that it
-meets these guidelines:
-
-1. The pull request should include tests, either as doctests, unit tests, or both.
-1. If the pull request adds functionality, the docs should be updated as part of the same PR. Doc string are often sufficient, make sure to follow the sphinx compatible standards.
-1. The pull request should work for Python 2.6, 2.7, and 3.3. If you need help writing code that works in both Python 2 and 3, see the documentation at the [Python-Future project](http://python-future.org) (the future package is an Airflow requirement and should be used where possible).
-1.  Code will be reviewed by re running the unittests, flake8 and syntax should be as rigorous as the core Python project.
-1.  Please rebase and resolve all conflicts before submitting.
-
-## Running unit tests
-
-Here are loose guidelines on how to get your environment to run the unit tests.
-We do understand that no one out there can run the full test suite since 
-Airflow is meant to connect to virtually any external system and that you most likely 
-have only a subset of these in your environment. You should run the CoreTests and
-tests related to things you touched in your PR.
 
 To set up a unit test environment, first take a look at `run_unit_tests.sh` and
 understand that your ``AIRFLOW_CONFIG`` points to an alternate config file
@@ -129,19 +137,3 @@ For more information on how to run a subset of the tests, take a look at the nos
 
 See also the the list of test classes and methods in `tests/code.py`.
 
-## Changing Metadata Database
-
-When developing features the need may arise to persist information to the the
-metadata database. Airflow has alembic built-in to handle all schema changes.
-Alembic must be installed on your development machine before continuing.
-
-```
-# starting at the root of the project
-$ pwd
-~/airflow
-# change to the airflow directory
-$ cd airflow
-$ alembic revision -m "add new field to db"
-  Generating
-~/airflow/airflow/migrations/versions/12341123_add_new_field_to_db.py
-```
