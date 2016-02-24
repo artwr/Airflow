@@ -112,13 +112,6 @@ class S3Hook(BaseHook):
         self.__dict__.update(d)
         self.__dict__['connection'] = self.get_conn()
 
-    def _parse_s3_url(self, s3url):
-        warnings.warn(
-            'Please note: S3Hook._parse_s3_url() is now '
-            'S3Hook.parse_s3_url() (no leading underscore).',
-            DeprecationWarning)
-        return self.parse_s3_url(s3url)
-
     @staticmethod
     def parse_s3_url(s3url):
         parsed_url = urlparse(s3url)
