@@ -57,6 +57,50 @@ class HiveCliHook(BaseHook):
         self.conn = conn
         self.run_as = run_as
 
+    def _prepare_jdbc_url(self):
+        conn = self.conn
+        jdbc_url = "jdbc:hive2://{conn.host}:{conn.port}/{conn.schema}"
+        if configuration.get('core', 'security') == 'kerberos':
+            template = conn.extra_dejson.get(
+                'principal', "hive/_HOST@EXAMPLE.COM")
+            if "_HOST" in template:
+                template = utils.replace_hostname_pattern(
+                    utils.get_components(template))
+
+            proxy_user = ""  # noqa
+            if conn.extra_dejson.get('proxy_user') == "login" and conn.login:
+                proxy_user = "hive.server2.proxy.user={0}".format(conn.login)
+            elif conn.extra_dejson.get('proxy_user') == "owner" and self.run_as:
+                proxy_user = "hive.server2.proxy.user={0}".format(self.run_as)
+
+            jdbc_url += ";principal={template};{proxy_user}"
+        elif self.auth:
+            jdbc_url += ";auth=" + self.auth
+
+        jdbc_url = jdbc_url.format(**locals())
+        return jdbc_url
+
+    def _prepare_cli_cmd(self, query_string=None, query_file=None):
+        hive_bin = 'hive'
+        cmd_extra = []
+        if self.use_beeline:
+            hive_bin = 'beeline'
+            jdbc_url = self._prepare_jdbc_url()
+            cmd_extra += ['-u', jdbc_url]
+            if self.conn.login:
+                cmd_extra += ['-n', self.conn.login]
+            if self.conn.password:
+                cmd_extra += ['-p', self.conn.password]
+        if query_file:
+            hive_cmd = [hive_bin, '-f', query_file] + cmd_extra
+        elif query_string:
+            hive_cmd = [hive_bin, '-e', query_string] + cmd_extra
+        else:
+            hive_cmd = [hive_bin] + cmd_extra
+        if self.hive_cli_params:
+            hive_cmd.extend(self.hive_cli_params.split())
+        return hive_cmd
+
     def run_cli(self, hql, schema=None, verbose=True):
         """
         Run an hql statement using the hive cli
@@ -76,42 +120,9 @@ class HiveCliHook(BaseHook):
                 f.write(hql.encode('UTF-8'))
                 f.flush()
                 fname = f.name
-                hive_bin = 'hive'
-                cmd_extra = []
 
-                if self.use_beeline:
-                    hive_bin = 'beeline'
-                    jdbc_url = "jdbc:hive2://{conn.host}:{conn.port}/{conn.schema}"
-                    if configuration.get('core', 'security') == 'kerberos':
-                        template = conn.extra_dejson.get(
-                            'principal', "hive/_HOST@EXAMPLE.COM")
-                        if "_HOST" in template:
-                            template = utils.replace_hostname_pattern(
-                                utils.get_components(template))
+                hive_cmd = self._prepare_cli_cmd(f.name)
 
-                        proxy_user = ""  # noqa
-                        if conn.extra_dejson.get('proxy_user') == "login" and conn.login:
-                            proxy_user = "hive.server2.proxy.user={0}".format(conn.login)
-                        elif conn.extra_dejson.get('proxy_user') == "owner" and self.run_as:
-                            proxy_user = "hive.server2.proxy.user={0}".format(self.run_as)
-
-                        jdbc_url += ";principal={template};{proxy_user}"
-                    elif self.auth:
-                        jdbc_url += ";auth=" + self.auth
-
-                    jdbc_url = jdbc_url.format(**locals())
-
-                    cmd_extra += ['-u', jdbc_url]
-                    if conn.login:
-                        cmd_extra += ['-n', conn.login]
-                    if conn.password:
-                        cmd_extra += ['-p', conn.password]
-
-                hive_cmd = [hive_bin, '-f', fname] + cmd_extra
-
-                if self.hive_cli_params:
-                    hive_params_list = self.hive_cli_params.split()
-                    hive_cmd.extend(hive_params_list)
                 if verbose:
                     logging.info(" ".join(hive_cmd))
                 sp = subprocess.Popen(
@@ -450,7 +461,8 @@ class HiveServer2Hook(BaseHook):
 
         # impyla uses GSSAPI instead of KERBEROS as a auth_mechanism identifier
         if auth_mechanism == 'KERBEROS':
-            logging.warning("Detected deprecated 'KERBEROS' for authMechanism for %s. Please use 'GSSAPI' instead",
+            logging.warning("Detected deprecated 'KERBEROS' for authMechanism "
+                            "for %s. Please use 'GSSAPI' instead",
                             self.hiveserver2_conn_id)
             auth_mechanism = 'GSSAPI'
 
@@ -498,10 +510,10 @@ class HiveServer2Hook(BaseHook):
                 schema = cur.description
                 with open(csv_filepath, 'wb') as f:
                     writer = csv.writer(f, delimiter=delimiter,
-                        lineterminator=lineterminator, encoding='utf-8')
+                                        lineterminator=lineterminator,
+                                        encoding='utf-8')
                     if output_header:
-                        writer.writerow([c[0]
-                            for c in cur.description])
+                        writer.writerow([c[0]for c in cur.description])
                     i = 0
                     while True:
                         rows = [row for row in cur.fetchmany() if row]
