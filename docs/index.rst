@@ -5,7 +5,7 @@
     :width: 150
 
 Apache Airflow (incubating) Documentation
-================================
+=========================================
 
 Airflow is a platform to programmatically author, schedule and monitor
 workflows.

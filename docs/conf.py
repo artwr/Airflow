@@ -14,6 +14,32 @@
 import os
 import sys
 
+try:
+    from unittest.mock import MagicMock
+except ImportError:
+    from mock import Mock as MagicMock
+
+
+class Mock(MagicMock):
+    @classmethod
+    def __getattr__(cls, name):
+            return Mock()
+
+MOCK_MODULES = ['babel', 'bcrypt',
+                'celery', 'chartkick', 'click', 'cloudant', 'croniter',
+                'cx_Oracle',
+                'dill', 'docker-py', 'eventlet', 'filechunkio', 'funcsigs',
+                'gevent', 'gitpython', 'google-api-python-client', 'greenlet',
+                'hdfs', 'hive-thrift-py', 'httplib2', 'impyla',
+                'jaydebeapi', 'jira', 'ldap3', 'librabbitmq', 'lxml',
+                'markdown', 'mysqlclient', 'numpy', 'oauth2client',
+                'pandas', 'psycopg2', 'pydruid', 'pyhive', 'pykerberos',
+                'pymssql', 'PyOpenSSL', 'pysmbclient', 'python-daemon',
+                'python-dateutil', 'qds-sdk',
+                'setproctitle', 'slackclient', 'snakebite', 'statsd',
+                'thrift', 'thrift_sasl', 'unicodecsv', 'vertica-python']
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+
 # Hack to allow changing for piece of the code to behave differently while
 # the docs are being built. The main objective was to alter the
 # behavior of the utils.apply_default that was hiding function headers
@@ -102,6 +128,22 @@ pygments_style = 'sphinx'
 
 # If true, keep warnings as "system message" paragraphs in the built documents.
 #keep_warnings = False
+
+# -- Options for autodoc extension ----------------------------------------
+autodoc_mock_imports = ['babel', 'bcrypt', 'celery', 'chartkick', 'click',
+                        'cloudant', 'croniter', 'cx_Oracle', 'dill',
+                        'docker-py', 'eventlet', 'filechunkio', 'funcsigs',
+                        'gevent', 'gitpython', 'google-api-python-client',
+                        'greenlet', 'hdfs', 'hive-thrift-py', 'httplib2',
+                        'impyla', 'jaydebeapi', 'jira',
+                        'ldap3', 'librabbitmq', 'lxml',
+                        'markdown', 'mysqlclient', 'numpy', 'oauth2client',
+                        'pandas', 'psycopg2', 'pydruid', 'pyhive',
+                        'pykerberos', 'pymssql', 'PyOpenSSL', 'pysmbclient',
+                        'python-daemon', 'qds-sdk', 'setproctitle',
+                        'slackclient', 'snakebite', 'statsd',
+                        'thrift', 'thrift_sasl', 'unicodecsv', 'vertica-python']
+
 
 
 # -- Options for HTML output ----------------------------------------------
