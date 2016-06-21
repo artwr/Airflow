@@ -1,0 +1,317 @@
+from future import standard_library
+standard_library.install_aliases()
+import logging
+import re
+import fnmatch
+import math
+import os
+from urllib.parse import urlparse
+import warnings
+
+import boto3
+import botocore
+
+from airflow.exceptions import AirflowException
+from airflow.hooks.boto3_hook import Boto3Hook
+
+
+class S3_Hook(Boto3Hook):
+    """
+    Interact with S3. This class is a wrapper around the boto library.
+    """
+
+    conn_name_attr = 's3_conn_id'
+    default_conn_name = 's3_default'
+
+
+    def __init__(
+            self,
+            s3_conn_id='s3_default'):
+        self.s3_conn_id = s3_conn_id
+        self.s3_conn = self.get_connection(s3_conn_id)
+        self.extra_params = self.s3_conn.extra_dejson
+        self.profile = self.extra_params.get('profile')
+        self._creds_in_conn = 'aws_secret_access_key' in self.extra_params
+        self._creds_in_config_file = 's3_config_file' in self.extra_params
+        self._default_to_boto = False
+        if self._creds_in_conn:
+            self._a_key = self.extra_params['aws_access_key_id']
+            self._s_key = self.extra_params['aws_secret_access_key']
+        elif self._creds_in_config_file:
+            self.s3_config_file = self.extra_params['s3_config_file']
+            # The format can be None and will default to boto in the parser
+            self.s3_config_format = self.extra_params.get('s3_config_format')
+        else:
+            self._default_to_boto = True
+        # STS support for cross account resource access
+        self._sts_conn_required = ('aws_account_id' in self.extra_params or
+                                   'role_arn' in self.extra_params)
+        if self._sts_conn_required:
+            self.role_arn = (self.extra_params.get('role_arn') or
+                             "arn:aws:iam::" +
+                             self.extra_params['aws_account_id'] +
+                             ":role/" +
+                             self.extra_params['aws_iam_role'])
+        self.connection = self.get_conn()
+
+    def __getstate__(self):
+        pickled_dict = dict(self.__dict__)
+        del pickled_dict['connection']
+        return pickled_dict
+
+    def __setstate__(self, d):
+        self.__dict__.update(d)
+        self.__dict__['connection'] = self.get_conn()
+
+    @staticmethod
+    def parse_s3_url(s3url):
+        parsed_url = urlparse(s3url)
+        if not parsed_url.netloc:
+            raise AirflowException('Please provide a bucket_name')
+        else:
+            bucket_name = parsed_url.netloc
+            if parsed_url.path[0] == '/':
+                key = parsed_url.path[1:]
+            else:
+                key = parsed_url.path
+            return (bucket_name, key)
+
+    def get_conn(self):
+        """
+        Returns the boto S3Connection object.
+        """
+        session = self.get_sessions()
+        s3 = session.resource('s3')
+        if self._default_to_boto:
+            return S3Connection(profile_name=self.profile)
+        a_key = s_key = None
+        if self._creds_in_config_file:
+            a_key, s_key = _parse_s3_config(self.s3_config_file,
+                                            self.s3_config_format,
+                                            self.profile)
+        elif self._creds_in_conn:
+            a_key = self._a_key
+            s_key = self._s_key
+        if self._sts_conn_required:
+            sts_connection = STSConnection(aws_access_key_id=a_key,
+                                           aws_secret_access_key=s_key,
+                                           profile_name=self.profile)
+            assumed_role_object = sts_connection.assume_role(
+                role_arn=self.role_arn,
+                role_session_name="Airflow_" + self.s3_conn_id
+                )
+            creds = assumed_role_object.credentials
+            connection = S3Connection(
+                aws_access_key_id=creds.access_key,
+                aws_secret_access_key=creds.secret_key,
+                security_token=creds.session_token
+                )
+        else:
+            connection = S3Connection(aws_access_key_id=a_key,
+                                      aws_secret_access_key=s_key,
+                                      profile_name=self.profile)
+        return connection
+
+    def check_for_bucket(self, bucket_name):
+        """
+        Check if bucket_name exists.
+
+        :param bucket_name: the name of the bucket
+        :type bucket_name: str
+        """
+        return self.connection.lookup(bucket_name) is not None
+
+    def get_bucket(self, bucket_name):
+        """
+        Returns a boto.s3.bucket.Bucket object
+
+        :param bucket_name: the name of the bucket
+        :type bucket_name: str
+        """
+        return self.connection.get_bucket(bucket_name)
+
+    def list_keys(self, bucket_name, prefix='', delimiter=''):
+        """
+        Lists keys in a bucket under prefix and not containing delimiter
+
+        :param bucket_name: the name of the bucket
+        :type bucket_name: str
+        :param prefix: a key prefix
+        :type prefix: str
+        :param delimiter: the delimiter marks key hierarchy.
+        :type delimiter: str
+        """
+        b = self.get_bucket(bucket_name)
+        keylist = list(b.list(prefix=prefix, delimiter=delimiter))
+        return [k.name for k in keylist] if keylist != [] else None
+
+    def list_prefixes(self, bucket_name, prefix='', delimiter=''):
+        """
+        Lists prefixes in a bucket under prefix
+
+        :param bucket_name: the name of the bucket
+        :type bucket_name: str
+        :param prefix: a key prefix
+        :type prefix: str
+        :param delimiter: the delimiter marks key hierarchy.
+        :type delimiter: str
+        """
+        b = self.get_bucket(bucket_name)
+        plist = b.list(prefix=prefix, delimiter=delimiter)
+        prefix_names = [p.name for p in plist
+                        if isinstance(p, boto.s3.prefix.Prefix)]
+        return prefix_names if prefix_names != [] else None
+
+    def check_for_key(self, key, bucket_name=None):
+        """
+        Checks that a key exists in a bucket
+        """
+        if not bucket_name:
+            (bucket_name, key) = self.parse_s3_url(key)
+        bucket = self.get_bucket(bucket_name)
+        return bucket.get_key(key) is not None
+
+    def get_key(self, key, bucket_name=None):
+        """
+        Returns a boto.s3.key.Key object
+
+        :param key: the path to the key
+        :type key: str
+        :param bucket_name: the name of the bucket
+        :type bucket_name: str
+        """
+        if not bucket_name:
+            (bucket_name, key) = self.parse_s3_url(key)
+        bucket = self.get_bucket(bucket_name)
+        return bucket.get_key(key)
+
+    def check_for_wildcard_key(self,
+                               wildcard_key, bucket_name=None, delimiter=''):
+        """
+        Checks that a key matching a wildcard expression exists in a bucket
+        """
+        return self.get_wildcard_key(wildcard_key=wildcard_key,
+                                     bucket_name=bucket_name,
+                                     delimiter=delimiter) is not None
+
+    def get_wildcard_key(self, wildcard_key, bucket_name=None, delimiter=''):
+        """
+        Returns a boto.s3.key.Key object matching the regular expression
+
+        :param regex_key: the path to the key
+        :type regex_key: str
+        :param bucket_name: the name of the bucket
+        :type bucket_name: str
+        """
+        if not bucket_name:
+            (bucket_name, wildcard_key) = self.parse_s3_url(wildcard_key)
+        bucket = self.get_bucket(bucket_name)
+        prefix = re.split(r'[*]', wildcard_key, 1)[0]
+        klist = self.list_keys(bucket_name, prefix=prefix, delimiter=delimiter)
+        if not klist:
+            return None
+        key_matches = [k for k in klist if fnmatch.fnmatch(k, wildcard_key)]
+        return bucket.get_key(key_matches[0]) if key_matches else None
+
+    def check_for_prefix(self, bucket_name, prefix, delimiter):
+        """
+        Checks that a prefix exists in a bucket
+        """
+        prefix = prefix + delimiter if prefix[-1] != delimiter else prefix
+        prefix_split = re.split(r'(\w+[{d}])$'.format(d=delimiter), prefix, 1)
+        previous_level = prefix_split[0]
+        plist = self.list_prefixes(bucket_name, previous_level, delimiter)
+        return False if plist is None else prefix in plist
+
+    def load_file(
+            self,
+            filename,
+            key,
+            bucket_name=None,
+            replace=False,
+            multipart_bytes=None):
+        """
+        Loads a local file to S3
+
+        :param filename: name of the file to load.
+        :type filename: str
+        :param key: S3 key that will point to the file
+        :type key: str
+        :param bucket_name: Name of the bucket in which to store the file
+        :type bucket_name: str
+        :param replace: A flag to decide whether or not to overwrite the key
+            if it already exists. If replace is False and the key exists, an
+            error will be raised.
+        :type replace: bool
+        :param multipart_bytes: If provided, the file is uploaded in parts of
+            this size (minimum 5242880). If None, the whole file is uploaded at
+            once.
+        :type multipart_bytes: int
+        """
+        if not bucket_name:
+            (bucket_name, key) = self.parse_s3_url(key)
+        bucket = self.get_bucket(bucket_name)
+        key_obj = bucket.get_key(key)
+        if not replace and key_obj:
+            raise ValueError("The key {key} already exists.".format(
+                **locals()))
+        if multipart_bytes:
+            from filechunkio import FileChunkIO
+            key_size = os.path.getsize(filename)
+            mp = bucket.initiate_multipart_upload(key_name=key)
+            total_chunks = int(math.ceil(key_size / multipart_bytes))
+            sent_bytes = 0
+            try:
+                for chunk in range(total_chunks):
+                    offset = chunk * multipart_bytes
+                    bytes = min(multipart_bytes, key_size - offset)
+                    with FileChunkIO(
+                            filename, 'r', offset=offset, bytes=bytes) as fp:
+                        logging.info('Sending chunk {c} of {tc}...'.format(
+                            c=chunk + 1, tc=total_chunks))
+                        mp.upload_part_from_file(fp, part_num=chunk + 1)
+            except:
+                mp.cancel_upload()
+                raise
+            mp.complete_upload()
+        else:
+            if not key_obj:
+                key_obj = bucket.new_key(key_name=key)
+            key_size = key_obj.set_contents_from_filename(filename,
+                                                      replace=replace)
+        logging.info("The key {key} now contains"
+                     " {key_size} bytes".format(**locals()))
+
+    def load_string(self, string_data,
+                    key, bucket_name=None,
+                    replace=False):
+        """
+        Loads a local file to S3
+
+        This is provided as a convenience to drop a file in S3. It uses the
+        boto infrastructure to ship a file to s3. It is currently using only
+        a single part download, and should not be used to move large files.
+
+        :param string_data: string to set as content for the key.
+        :type string_data: str
+        :param key: S3 key that will point to the file
+        :type key: str
+        :param bucket_name: Name of the bucket in which to store the file
+        :type bucket_name: str
+        :param replace: A flag to decide whether or not to overwrite the key
+            if it already exists
+        :type replace: bool
+        """
+        if not bucket_name:
+            (bucket_name, key) = self.parse_s3_url(key)
+        bucket = self.get_bucket(bucket_name)
+        key_obj = bucket.get_key(key)
+        if not replace and key_obj:
+            raise ValueError("The key {key} already exists.".format(
+                **locals()))
+        if not key_obj:
+            key_obj = bucket.new_key(key_name=key)
+        key_size = key_obj.set_contents_from_string(string_data,
+                                                    replace=replace)
+        logging.info("The key {key} now contains"
+                     " {key_size} bytes".format(**locals()))
