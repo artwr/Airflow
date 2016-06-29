@@ -1028,16 +1028,13 @@ class Airflow(BaseView):
             dates = [start_date]
         else:
             dates = dag.date_range(start_date, end_date=end_date)
-
-        tis = session.query(TI).filter(
+        tis_q = session.query(TI).filter(
             TI.dag_id.in_(dag_ids),
             TI.execution_date.in_(dates),
-            TI.task_id.in_(task_ids)).all()
-        tis_to_change = session.query(TI).filter(
-            TI.dag_id.in_(dag_ids),
-            TI.execution_date.in_(dates),
-            TI.task_id.in_(task_ids),
-            TI.state != State.SUCCESS).all()
+            TI.task_id.in_(task_ids))
+        tis_to_change_q = tis_q.filter(TI.state != State.SUCCESS)
+        tis = tis_q.all()
+        tis_to_change = tis_to_change_q.all()
         tasks = list(product(task_ids, dates))
         tis_to_create = list(
             set(tasks) -
@@ -1053,8 +1050,7 @@ class Airflow(BaseView):
             return redirect(origin)
 
         if confirmed:
-            for ti in tis_to_change:
-                ti.state = State.SUCCESS
+            tis_to_change_q.update({TI.state: State.SUCCESS})
             session.commit()
 
             for task_id, task_execution_date in tis_to_create:
