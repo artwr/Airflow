@@ -583,8 +583,9 @@ class HiveServer2Hook(BaseHook):
 
         # impyla uses GSSAPI instead of KERBEROS as a auth_mechanism identifier
         if auth_mechanism == 'KERBEROS':
-            logging.warning("Detected deprecated 'KERBEROS' for authMechanism for %s. Please use 'GSSAPI' instead",
-                            self.hiveserver2_conn_id)
+            logging.warning("Detected deprecated 'KERBEROS' for authMechanism "
+                            "for {}. Please use 'GSSAPI' instead"
+                            "".format(self.hiveserver2_conn_id))
             auth_mechanism = 'GSSAPI'
 
         from impala.dbapi import connect
@@ -596,32 +597,93 @@ class HiveServer2Hook(BaseHook):
             user=db.login,
             database=db.schema or 'default')
 
+    def test_hql(self, hql):
+        """
+        Test an hql statement using hiveserver2 and EXPLAIN
+
+        """
+        from impala.error import ProgrammingError
+        create, insert, other = [], [], []
+        for query in hql.split(';'):  # naive
+            query_original = query
+            query = query.lower().strip()
+
+            if query.startswith('create table'):
+                create.append(query_original)
+            elif query.startswith(('set ',
+                                   'add jar ',
+                                   'create temporary function')):
+                other.append(query_original)
+            elif query.startswith('insert'):
+                insert.append(query_original)
+        other = ';'.join(other)
+        for query_set in [create, insert]:
+            for query in query_set:
+
+                query_preview = ' '.join(query.split())[:50]
+                logging.info("Testing HQL [{0} (...)]".format(query_preview))
+                if query_set == insert:
+                    query = other + '; explain ' + query
+                else:
+                    query = 'explain ' + query
+                try:
+                    self.run(query)
+                except ProgrammingError as e:
+                    message = e.args[0].split('\n')[-2]
+                    logging.info(message)
+                    error_loc = re.search('(\d+):(\d+)', message)
+                    if error_loc and error_loc.group(1).isdigit():
+                        l = int(error_loc.group(1))
+                        begin = max(l - 2, 0)
+                        end = min(l + 3, len(query.split('\n')))
+                        context = '\n'.join(query.split('\n')[begin:end])
+                        logging.info("Context :\n {0}".format(context))
+                else:
+                    logging.info("SUCCESS")
+
+    def run(self, hql, schema='default'):
+        """
+        Runs a list of statements. Useful when the series of statements
+        is not supposed to return results (DDL, ...)
+
+        :param hql: list of statements to be run.
+        :type hql: string or list
+        :param schema: Name of hive schema (database) @table belongs to
+        :type schema: string
+        """
+        with self.get_conn() as conn:
+            if isinstance(hql, basestring):
+                hql = [hql]
+            with conn.cursor() as cur:
+                cur.executemany(hql)
+
     def get_results(self, hql, schema='default', arraysize=1000):
         from impala.error import ProgrammingError
         with self.get_conn() as conn:
             if isinstance(hql, basestring):
                 hql = [hql]
+
             results = {
                 'data': [],
                 'header': [],
             }
-            cur = conn.cursor()
-            for statement in hql:
-                cur.execute(statement)
-                records = []
-                try:
-                    # impala Lib raises when no results are returned
-                    # we're silencing here as some statements in the list
-                    # may be `SET` or DDL
-                    records = cur.fetchall()
-                except ProgrammingError:
-                    logging.debug("get_results returned no records")
-                if records:
-                    results = {
-                        'data': records,
-                        'header': cur.description,
-                    }
-            return results
+            with conn.cursor() as cur:
+                for statement in hql:
+                    cur.execute(statement)
+                    records = []
+                    try:
+                        # impala Lib raises when no results are returned
+                        # we're silencing here as some statements in the list
+                        # may be `SET` or DDL
+                        records = cur.fetchall()
+                    except ProgrammingError:
+                        logging.debug("get_results returned no records")
+                    if records:
+                        results = {
+                            'data': records,
+                            'header': cur.description,
+                        }
+                return results
 
     def to_csv(
             self,
