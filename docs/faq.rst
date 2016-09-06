@@ -125,8 +125,19 @@ simple dictionary.
         globals()[dag_id] = DAG(dag_id)
         # or better, call a function that returns a DAG object!
 
+I get an import error for my dag called 'a.b.v1'.
+-------------------------------------------------
+
+Airflow looks in you ``DAGS_FOLDER`` for modules that contain ``DAG`` objects
+in their global namespace, and adds the objects it finds in the
+``DagBag``. Files the name of which include dots will cause issues as they
+require special care when importing. Also, we have used dots to mark parent
+and child relationship of a DAG and a SubDAG, therefore we recommend against
+using dots in DAG names to avoid confusion.
+
+
 What are all the ``airflow run`` commands in my process list?
----------------------------------------------------------------
+-------------------------------------------------------------
 
 There are many layers of ``airflow run`` commands, meaning it can call itself.
 
