@@ -20,17 +20,16 @@ import mock
 import nose
 import six
 
-from airflow import DAG, configuration, operators
+from airflow import DAG, configuration, operators, hooks
 configuration.load_test_config()
 
+import airflow.hooks.hive_hooks
+import airflow.operators.presto_to_mysql
 
 DEFAULT_DATE = datetime.datetime(2015, 1, 1)
 DEFAULT_DATE_ISO = DEFAULT_DATE.isoformat()
 DEFAULT_DATE_DS = DEFAULT_DATE_ISO[:10]
 
-
-import airflow.hooks.hive_hooks
-import airflow.operators.presto_to_mysql
 
 class HiveServer2Test(unittest.TestCase):
     def setUp(self):
@@ -191,56 +190,6 @@ class HivePrestoTest(unittest.TestCase):
         t = operators.hive_operator.HiveOperator(
             task_id='beeline_hql', hive_cli_conn_id='beeline_default',
             hql=self.hql, dag=self.dag)
-        t.run(start_date=DEFAULT_DATE, end_date=DEFAULT_DATE,
-              ignore_ti_state=True)
-
-    def test_presto(self):
-        sql = """
-        SELECT count(1) FROM airflow.static_babynames_partitioned;
-        """
-        import airflow.operators.presto_check_operator  # noqa
-        t = operators.presto_check_operator.PrestoCheckOperator(
-            task_id='presto_check', sql=sql, dag=self.dag)
-        t.run(start_date=DEFAULT_DATE, end_date=DEFAULT_DATE,
-              ignore_ti_state=True)
-
-    def test_presto_to_mysql(self):
-        t = operators.presto_to_mysql.PrestoToMySqlTransfer(
-            task_id='presto_to_mysql_check',
-            sql="""
-            SELECT name, count(*) as ccount
-            FROM airflow.static_babynames
-            GROUP BY name
-            """,
-            mysql_table='test_static_babynames',
-            mysql_preoperator='TRUNCATE TABLE test_static_babynames;',
-            dag=self.dag)
-        t.run(start_date=DEFAULT_DATE, end_date=DEFAULT_DATE,
-              ignore_ti_state=True)
-
-    def test_hdfs_sensor(self):
-        t = operators.sensors.HdfsSensor(
-            task_id='hdfs_sensor_check',
-            filepath='hdfs://user/hive/warehouse/airflow.db/static_babynames',
-            dag=self.dag)
-        t.run(start_date=DEFAULT_DATE, end_date=DEFAULT_DATE,
-              ignore_ti_state=True)
-
-    def test_webhdfs_sensor(self):
-        t = operators.sensors.WebHdfsSensor(
-            task_id='webhdfs_sensor_check',
-            filepath='hdfs://user/hive/warehouse/airflow.db/static_babynames',
-            timeout=120,
-            dag=self.dag)
-        t.run(start_date=DEFAULT_DATE, end_date=DEFAULT_DATE,
-              ignore_ti_state=True)
-
-    def test_sql_sensor(self):
-        t = operators.sensors.SqlSensor(
-            task_id='hdfs_sensor_check',
-            conn_id='presto_default',
-            sql="SELECT 'x' FROM airflow.static_babynames LIMIT 1;",
-            dag=self.dag)
         t.run(start_date=DEFAULT_DATE, end_date=DEFAULT_DATE,
               ignore_ti_state=True)
 

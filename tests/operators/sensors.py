@@ -22,7 +22,10 @@ import unittest
 from datetime import datetime, timedelta
 
 from airflow import DAG, configuration
-from airflow.operators.sensors import HttpSensor, BaseSensorOperator, HdfsSensor
+from airflow.operators.sensors import (HttpSensor,
+                                       BaseSensorOperator,
+                                       HdfsSensor,
+                                       WebHdfsSensor,)
 from airflow.utils.decorators import apply_defaults
 from airflow.exceptions import (AirflowException,
                                 AirflowSensorTimeout,
@@ -113,6 +116,28 @@ class HttpSensorTests(unittest.TestCase):
             task.execute(None)
 
 
+class WebHdfsSensorTests(unittest.TestCase):
+
+    def setUp(self):
+        configuration.load_test_config()
+        args = {
+            'owner': 'airflow',
+            'start_date': DEFAULT_DATE
+        }
+        dag = DAG(TEST_DAG_ID, default_args=args)
+        self.dag = dag
+
+    def test_webhdfs_sensor(self):
+        import airflow.hooks.webhdfs_hook
+        t = hooks.webhdfs_hook.WebHdfsSensor(
+            task_id='webhdfs_sensor_check',
+            filepath='hdfs://user/hive/warehouse/airflow.db/static_babynames',
+            timeout=120,
+            dag=self.dag)
+        t.run(start_date=DEFAULT_DATE, end_date=DEFAULT_DATE,
+              ignore_ti_state=True)
+
+
 class HdfsSensorTests(unittest.TestCase):
 
     def setUp(self):
@@ -181,3 +206,26 @@ class HdfsSensorTests(unittest.TestCase):
         # Then
         with self.assertRaises(AirflowSensorTimeout):
             task.execute(None)
+
+
+class HdfsSensorTests(unittest.TestCase):
+
+    def setUp(self):
+        if sys.version_info[0] == 3:
+            raise unittest.SkipTest('HdfsSensor won\'t work with python3. No need to test anything here')
+        args = {
+            'owner': 'airflow',
+            'start_date': DEFAULT_DATE
+        }
+        dag = DAG(TEST_DAG_ID, default_args=args)
+        self.dag = dag
+
+    def test_hdfs_sensor(self):
+        t = HdfsSensor(
+            task_id='hdfs_sensor_check',
+            filepath='hdfs://user/hive/warehouse/airflow.db/static_babynames',
+            dag=self.dag)
+        t.run(start_date=DEFAULT_DATE, end_date=DEFAULT_DATE,
+              ignore_ti_state=True)
+
+
