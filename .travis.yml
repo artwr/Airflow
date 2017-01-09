@@ -95,9 +95,9 @@ before_install:
   - chmod 600 ~/.ssh/*
   - jdk_switcher use oraclejdk8
 install:
-  - pip install --upgrade pip
-  - pip install tox
-  - pip install codecov
+  - pip install -qq --upgrade pip
+  - pip install -qq tox
+  - pip install -qq codecov
 before_script:
   - mysql -e 'drop database if exists airflow; create database airflow' -u root
   - psql -c 'create database airflow;' -U postgres
